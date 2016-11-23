@@ -4,7 +4,7 @@ import sys
 import time
 import json
 import random
-from com.sun import jsonformat
+import jsonformat
 from time import sleep
 
 
