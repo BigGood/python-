@@ -6,6 +6,7 @@ import json
 import random
 import jsonformat
 from time import sleep
+import urllib
 
 
 
@@ -44,6 +45,7 @@ skey=xmldata[xmldata.find("<skey>")+6:xmldata.find("</skey>")]
 sid=xmldata[xmldata.find("<wxsid>")+7:xmldata.find("</wxsid>")]
 uin=xmldata[xmldata.find("<wxuin>")+7:xmldata.find("</wxuin>")]
 pass_ticket=xmldata[xmldata.find("<pass_ticket>")+13:xmldata.find("</pass_ticket>")]
+print(xmldata)
 print(skey,sid,uin,pass_ticket)
 
 DeviceId='e' + repr(random.random())[2:17]
@@ -57,3 +59,49 @@ params = {
 } 
 initData=http("https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=%s&pass_ticket=%s" % (int(time.time()),pass_ticket),params,"POST").decode('UTF-8');
 initData=json.loads(initData)
+userId = initData['User']['UserName']
+synckey='|'.join(
+            [str(keyVal['Key']) + '_' + str(keyVal['Val']) for keyVal in initData['SyncKey']['List']])
+print(userId)
+params2={
+        'BaseRequest' : params['BaseRequest'],
+        "Code":3,
+        "FromUserName":userId,
+        "ToUserName":userId,
+        "ClientMsgId":int(time.time()*1000)
+        }
+notifyData = http("https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify?pass_ticket=%s" % (pass_ticket),params2,"POST").decode("UTF-8");
+print(notifyData)
+getcontactData=http("https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?lang=zh_CN&pass_ticket=%s&seq=0&skey=%s" % (pass_ticket,skey), "", "GET").decode("UTF-8");
+print(getcontactData)
+
+SyncHost = [
+            'webpush.weixin.qq.com',
+            'webpush2.weixin.qq.com',
+            'webpush.wechat.com',
+            'webpush1.wechat.com',
+            'webpush2.wechat.com',
+#             'webpush1.wechatapp.com',
+            'webpush.wx.qq.com'
+        ]
+params3 = {
+            'r': int(time.time()*1000),
+            'sid': sid,
+            'uin': uin,
+            'skey': skey,
+            'deviceid': DeviceId,
+            'synckey': synckey,
+            '_': int(time.time()*1000),
+        }
+for hosts in SyncHost:
+    url="https://"+hosts+"/cgi-bin/mmwebwx-bin/synccheck?"+ urllib.parse.urlencode(params3)
+    print(url)
+    synccheckData=http(url,"","GET").decode("UTF-8");
+    req = urllib.request.Request(url,json.dumps("").encode(encoding='UTF8'),method="GET")
+    req.add_header('Referer', 'https://wx.qq.com/')
+    initdata = urllib.request.urlopen(req).read()
+    
+    print(synccheckData)
+    
+
+
