@@ -132,6 +132,6 @@ while True:
             xiaobingId=input("小冰ID：")
             print(xiaobingId)
             if xiaobingId !='':
-                sendMsg("小冰你好",xiaobingId)
+                sendMsg("小冰冰你好",xiaobingId)
 
 
