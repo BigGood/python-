@@ -55,7 +55,8 @@ def sendMsg(msg,sendUserId):
     data = opener.open(req).read()
     return data    
       
-xiaobingId=''   
+xiaobingId=''
+msgData={}   
 uuid="";
 imageWrite();
 code=0
@@ -114,7 +115,7 @@ while True:
             r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}', synccheckData)
     retcode = pm.group(1)
     selector = pm.group(2)
-    if retcode=='0' and selector=='2':
+    if retcode=='0' and selector!='0':
         params4={
                 'BaseRequest' : params['BaseRequest'],
                 "SyncKey":SyncKeyObj
@@ -130,8 +131,16 @@ while True:
         global xiaobingId
         if xiaobingId =='':
             xiaobingId=input("小冰ID：")
+            ToUserName=input("监听对象：")
             print(xiaobingId)
             if xiaobingId !='':
                 sendMsg("小冰你好",xiaobingId)
-
+        else:        
+            for msgAdd in webwxsyncData['AddMsgList']:
+                if msgAdd['FromUserName']==ToUserName and msgAdd['MsgType']==1:
+                    print('向小冰发送'+msgAdd['Content'])
+                    sendMsg(msgAdd['Content'],xiaobingId)        
+                if msgAdd['FromUserName']==xiaobingId and msgAdd['MsgType']==1:
+                    print('小冰说'+msgAdd['Content'])
+                    sendMsg(msgAdd['Content'],ToUserName)
 
