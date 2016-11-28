@@ -53,8 +53,22 @@ def sendMsg(msg,sendUserId):
     req = urllib.request.Request(msgurl,str1.encode(encoding='UTF8'),method="POST")
     req.add_header('ContentType','application/json; charset=UTF-8' ) 
     data = opener.open(req).read()
-    return data    
-      
+    return data     
+def msgAction(msg):
+    returnMsg = msg["Content"]
+    if msg["MsgType"]==1:
+        if msg['FromUserName'][:2] == '@@':
+            content = msg["Content"].split(':<br/>')[1]
+            returnMsg = content
+        else:
+            content = msg["Content"]
+            returnMsg = content
+    if msg["MsgType"]==51:
+        returnMsg=""          
+    return returnMsg;    
+            
+    
+          
 xiaobingId=''
 msgData={}   
 uuid="";
@@ -133,14 +147,14 @@ while True:
             xiaobingId=input("小冰ID：")
             ToUserName=input("监听对象：")
             print(xiaobingId)
-            if xiaobingId !='':
-                sendMsg("小冰你好",xiaobingId)
+#             if xiaobingId !='':
+#                 sendMsg("小冰你好",xiaobingId)
         else:        
             for msgAdd in webwxsyncData['AddMsgList']:
-                if msgAdd['FromUserName']==ToUserName and msgAdd['MsgType']==1:
-                    print('向小冰发送'+msgAdd['Content'])
-                    sendMsg(msgAdd['Content'],xiaobingId)        
-                if msgAdd['FromUserName']==xiaobingId and msgAdd['MsgType']==1:
-                    print('小冰说'+msgAdd['Content'])
-                    sendMsg(msgAdd['Content'],ToUserName)
+                if msgAdd['ToUserName']==ToUserName :
+                    message = msgAction(msgAdd)
+                    if message!="":
+                        sendMsg(message,xiaobingId)        
+                if msgAdd['FromUserName']==xiaobingId:
+                    sendMsg(msgAction(msgAdd),ToUserName)
 
