@@ -9,6 +9,7 @@ from time import sleep
 import urllib
 import http.cookiejar as co
 import re
+import os
 
 
 cj = co.CookieJar()
@@ -63,10 +64,93 @@ def msgAction(msg):
         else:
             content = msg["Content"]
             returnMsg = content
+    if msg["MsgType"]==3:
+        returnMsg = getmsgimg(msg["MsgId"])         
     if msg["MsgType"]==51:
         returnMsg=""          
     return returnMsg;    
-            
+def getmsgimg(msgId):
+    dirName='C://Users/Administrator/Desktop/img_' + msgId + '.jpg'
+    object = open(dirName,"wb")    
+    object.write(http("https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?&MsgID=%s&skey=%s&type=slave" % (msgId,skey),None,"get"))
+    object.close();
+    return dirName    
+    
+    
+def webwxuploadmedia(self, image_name):
+        url = 'https://file2.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
+        # 计数器
+        self.media_count = self.media_count + 1
+        # 文件名
+        file_name = image_name
+        # MIME格式
+        # mime_type = application/pdf, image/jpeg, image/png, etc.
+        mime_type = mimetypes.guess_type(image_name, strict=False)[0]
+        # 微信识别的文档格式，微信服务器应该只支持两种类型的格式。pic和doc
+        # pic格式，直接显示。doc格式则显示为文件。
+        media_type = 'pic' if mime_type.split('/')[0] == 'image' else 'doc'
+        # 上一次修改日期
+        lastModifieDate = 'Thu Mar 17 2016 00:55:10 GMT+0800 (CST)'
+        # 文件大小
+        file_size = os.path.getsize(file_name)
+        # PassTicket
+        pass_ticket = self.pass_ticket
+        # clientMediaId
+        client_media_id = str(int(time.time() * 1000)) + \
+            str(random.random())[:5].replace('.', '')
+        # webwx_data_ticket
+        webwx_data_ticket = ''
+        for item in self.cookie:
+            if item.name == 'webwx_data_ticket':
+                webwx_data_ticket = item.value
+                break
+        if (webwx_data_ticket == ''):
+            return "None Fuck Cookie"
+
+        uploadmediarequest = json.dumps({
+            "BaseRequest": self.BaseRequest,
+            "ClientMediaId": client_media_id,
+            "TotalLen": file_size,
+            "StartPos": 0,
+            "DataLen": file_size,
+            "MediaType": 4
+        }, ensure_ascii=False).encode('utf8')
+
+        multipart_encoder = MultipartEncoder(
+            fields={
+                'id': 'WU_FILE_' + str(self.media_count),
+                'name': file_name,
+                'type': mime_type,
+                'lastModifieDate': lastModifieDate,
+                'size': str(file_size),
+                'mediatype': media_type,
+                'uploadmediarequest': uploadmediarequest,
+                'webwx_data_ticket': webwx_data_ticket,
+                'pass_ticket': pass_ticket,
+                'filename': (file_name, open(file_name, 'rb'), mime_type.split('/')[1])
+            },
+            boundary='-----------------------------1575017231431605357584454111'
+        )
+
+        headers = {
+            'Host': 'file2.wx.qq.com',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:42.0) Gecko/20100101 Firefox/42.0',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Referer': 'https://wx2.qq.com/',
+            'Content-Type': multipart_encoder.content_type,
+            'Origin': 'https://wx2.qq.com',
+            'Connection': 'keep-alive',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache'
+        }
+        req = urllib.request.Request(url,multipart_encoder,method="POST",headers=headers)
+        response_json = json.loads(opener.open(req).read())
+        print(response_json)
+        if response_json['BaseResponse']['Ret'] == 0:
+            return response_json
+        return None            
     
           
 xiaobingId=''
