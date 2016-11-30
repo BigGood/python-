@@ -10,7 +10,7 @@ import urllib
 import http.cookiejar as co
 import re
 import os
-
+import mimetypes
 
 cj = co.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
@@ -38,23 +38,26 @@ def loginCheck():
     print(logindata)
     global code
     code=int(logindata[logindata.find('code=')+5:logindata.find('\n')-1])
-def sendMsg(msg,sendUserId):
-    msgurl='https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?lang=zh_CN'
-    timeC=str(int(time.time() * 1000)) + str(random.random())[:5].replace('.', '')
-    msgdata={
-        'BaseRequest' : params['BaseRequest'],
-        "Msg":{"Type":1,
-               "Content":msg,
-               "FromUserName":userId,
-               "ToUserName":sendUserId,
-               "LocalID":timeC,
-               "ClientMsgId":timeC
-    },"Scene":0}
-    str1=jsonformat.someutil().toJson(msgdata,"")
-    req = urllib.request.Request(msgurl,str1.encode(encoding='UTF8'),method="POST")
-    req.add_header('ContentType','application/json; charset=UTF-8' ) 
-    data = opener.open(req).read()
-    return data     
+def sendMsg(msg,sendUserId,type):
+    if type==1:
+        msgurl='https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?lang=zh_CN'
+        timeC=str(int(time.time() * 1000)) + str(random.random())[:5].replace('.', '')
+        msgdata={
+            'BaseRequest' : params['BaseRequest'],
+            "Msg":{"Type":1,
+                   "Content":msg,
+                   "FromUserName":userId,
+                   "ToUserName":sendUserId,
+                   "LocalID":timeC,
+                   "ClientMsgId":timeC
+        },"Scene":0}
+        str1=jsonformat.someutil().toJson(msgdata,"")
+        req = urllib.request.Request(msgurl,str1.encode(encoding='UTF8'),method="POST")
+        req.add_header('ContentType','application/json; charset=UTF-8' ) 
+        data = opener.open(req).read()
+        return data
+    if type==3:
+        sendmsgimg(msg,sendUserId)     
 def msgAction(msg):
     returnMsg = msg["Content"]
     if msg["MsgType"]==1:
@@ -74,13 +77,37 @@ def getmsgimg(msgId):
     object = open(dirName,"wb")    
     object.write(http("https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?&MsgID=%s&skey=%s&type=slave" % (msgId,skey),None,"get"))
     object.close();
+    return dirName
+def sendmsgimg(msgId,sendUserId):
+    dirName=msgId
+    jsondata = webwxuploadmedia(dirName)
+    media_id = jsondata['MediaId']
+    url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&pass_ticket=%s' % self.pass_ticket
+    clientMsgId = str(int(time.time() * 1000)) + \
+        str(random.random())[:5].replace('.', '')
+    data_json = {
+        "BaseRequest": self.BaseRequest,
+        "Msg": {
+            "Type": 3,
+            "MediaId": media_id,
+            "FromUserName": userId,
+            "ToUserName": sendUserId,
+            "LocalID": clientMsgId,
+            "ClientMsgId": clientMsgId
+        }
+    }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
+    data = json.dumps(data_json, ensure_ascii=False).encode('utf8')
+    r = requests.post(url, data=data, headers=headers)
+    dic = r.json()
     return dirName    
     
     
-def webwxuploadmedia(self, image_name):
+def webwxuploadmedia(image_name):
         url = 'https://file2.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
         # 计数器
-        self.media_count = self.media_count + 1
+        global media_count
+        media_count = media_count + 1
         # 文件名
         file_name = image_name
         # MIME格式
@@ -90,17 +117,15 @@ def webwxuploadmedia(self, image_name):
         # pic格式，直接显示。doc格式则显示为文件。
         media_type = 'pic' if mime_type.split('/')[0] == 'image' else 'doc'
         # 上一次修改日期
-        lastModifieDate = 'Thu Mar 17 2016 00:55:10 GMT+0800 (CST)'
+        lastModifieDate = 'Mon Aug 08 2016 20:21:13 GMT+0800 (CST)'
         # 文件大小
         file_size = os.path.getsize(file_name)
-        # PassTicket
-        pass_ticket = self.pass_ticket
         # clientMediaId
         client_media_id = str(int(time.time() * 1000)) + \
             str(random.random())[:5].replace('.', '')
         # webwx_data_ticket
         webwx_data_ticket = ''
-        for item in self.cookie:
+        for item in cj:
             if item.name == 'webwx_data_ticket':
                 webwx_data_ticket = item.value
                 break
@@ -108,17 +133,16 @@ def webwxuploadmedia(self, image_name):
             return "None Fuck Cookie"
 
         uploadmediarequest = json.dumps({
-            "BaseRequest": self.BaseRequest,
+            "BaseRequest": params['BaseRequest'],
             "ClientMediaId": client_media_id,
             "TotalLen": file_size,
             "StartPos": 0,
             "DataLen": file_size,
             "MediaType": 4
-        }, ensure_ascii=False).encode('utf8')
+        }, ensure_ascii=False)
 
-        multipart_encoder = MultipartEncoder(
-            fields={
-                'id': 'WU_FILE_' + str(self.media_count),
+        multipart_encoder = {
+                'id': 'WU_FILE_' + str(media_count),
                 'name': file_name,
                 'type': mime_type,
                 'lastModifieDate': lastModifieDate,
@@ -127,11 +151,26 @@ def webwxuploadmedia(self, image_name):
                 'uploadmediarequest': uploadmediarequest,
                 'webwx_data_ticket': webwx_data_ticket,
                 'pass_ticket': pass_ticket,
-                'filename': (file_name, open(file_name, 'rb'), mime_type.split('/')[1])
-            },
-            boundary='-----------------------------1575017231431605357584454111'
-        )
-
+                'filename': file_name
+            }
+        boundary='-----------------------------1575017231431605357584454111'
+        data=""
+        for k, v in multipart_encoder.items():
+            print(k)
+            print(v)
+            data+=boundary+"\n"
+            if k=="filename":
+                data+='Content-Disposition: form-data; name="%s"; filename="' % k +v+'"\n' 
+                data+='Content-Type: '+mime_type.split('/')[1]
+            else:
+                data+='Content-Disposition: form-data; name="%s"\n' % k    
+            data+="\n"
+            if k=="filename":
+                data+="\n"
+            else:    
+                data+=v+"\n"
+        data+=boundary+"--"
+        print(data)    
         headers = {
             'Host': 'file2.wx.qq.com',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:42.0) Gecko/20100101 Firefox/42.0',
@@ -139,14 +178,14 @@ def webwxuploadmedia(self, image_name):
             'Accept-Language': 'en-US,en;q=0.5',
             'Accept-Encoding': 'gzip, deflate',
             'Referer': 'https://wx2.qq.com/',
-            'Content-Type': multipart_encoder.content_type,
+            'Content-Type':'multipart/form-data; boundary='+boundary,
             'Origin': 'https://wx2.qq.com',
             'Connection': 'keep-alive',
             'Pragma': 'no-cache',
             'Cache-Control': 'no-cache'
         }
-        req = urllib.request.Request(url,multipart_encoder,method="POST",headers=headers)
-        response_json = json.loads(opener.open(req).read())
+        req = urllib.request.Request(url,data,method="POST",headers=headers)
+        response_json = json.loads(opener.open(req).read().decode('UTF-8'))
         print(response_json)
         if response_json['BaseResponse']['Ret'] == 0:
             return response_json
@@ -158,6 +197,7 @@ msgData={}
 uuid="";
 imageWrite();
 code=0
+media_count=0
 while code!=200:
     time.sleep(3)
     loginCheck();
@@ -238,7 +278,7 @@ while True:
                 if msgAdd['ToUserName']==ToUserName :
                     message = msgAction(msgAdd)
                     if message!="":
-                        sendMsg(message,xiaobingId)        
+                        sendMsg(message,xiaobingId,msgAdd['MsgType'])        
                 if msgAdd['FromUserName']==xiaobingId:
-                    sendMsg(msgAction(msgAdd),ToUserName)
+                    sendMsg(msgAction(msgAdd),ToUserName,msgAdd['MsgType'])
 
