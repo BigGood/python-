@@ -11,6 +11,8 @@ import http.cookiejar as co
 import re
 import os
 import mimetypes
+import requests
+import base64
 
 cj = co.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
@@ -151,7 +153,7 @@ def webwxuploadmedia(image_name):
                 'uploadmediarequest': uploadmediarequest,
                 'webwx_data_ticket': webwx_data_ticket,
                 'pass_ticket': pass_ticket,
-                'filename': file_name
+                'filename': (file_name, open(file_name, 'rb'), mime_type.split('/')[1])
             }
         boundary='-----------------------------1575017231431605357584454111'
         data=""
@@ -160,13 +162,18 @@ def webwxuploadmedia(image_name):
             print(v)
             data+=boundary+"\n"
             if k=="filename":
-                data+='Content-Disposition: form-data; name="%s"; filename="' % k +v+'"\n' 
-                data+='Content-Type: '+mime_type.split('/')[1]
+                data+='Content-Disposition: form-data; name="%s"; filename="' % k +v[0]+'"\n' 
+                data+='Content-Type: '+v[2]
             else:
                 data+='Content-Disposition: form-data; name="%s"\n' % k    
             data+="\n"
             if k=="filename":
                 data+="\n"
+                data+="\n"
+                c=v[1].read()
+                print(c)
+                print(base64.b64encode(c).decode('UTF8'))
+#                 data+=base64.b64encode(c).decode('UTF8')+"\n"
             else:    
                 data+=v+"\n"
         data+=boundary+"--"
@@ -184,7 +191,7 @@ def webwxuploadmedia(image_name):
             'Pragma': 'no-cache',
             'Cache-Control': 'no-cache'
         }
-        req = urllib.request.Request(url,data,method="POST",headers=headers)
+        req = urllib.request.Request(url,data.encode(encoding='UTF8'),method="POST",headers=headers)
         response_json = json.loads(opener.open(req).read().decode('UTF-8'))
         print(response_json)
         if response_json['BaseResponse']['Ret'] == 0:
