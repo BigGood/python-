@@ -83,12 +83,14 @@ def getmsgimg(msgId):
 def sendmsgimg(msgId,sendUserId):
     dirName=msgId
     jsondata = webwxuploadmedia(dirName)
+    if jsondata==None:
+        return;
     media_id = jsondata['MediaId']
-    url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&pass_ticket=%s' % self.pass_ticket
+    url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&pass_ticket=%s' % pass_ticket
     clientMsgId = str(int(time.time() * 1000)) + \
         str(random.random())[:5].replace('.', '')
     data_json = {
-        "BaseRequest": self.BaseRequest,
+        "BaseRequest": params['BaseRequest'],
         "Msg": {
             "Type": 3,
             "MediaId": media_id,
@@ -106,7 +108,7 @@ def sendmsgimg(msgId,sendUserId):
     
     
 def webwxuploadmedia(image_name):
-        url = 'https://file2.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
+        url = 'https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
         # 计数器
         global media_count
         media_count = media_count + 1
@@ -119,7 +121,7 @@ def webwxuploadmedia(image_name):
         # pic格式，直接显示。doc格式则显示为文件。
         media_type = 'pic' if mime_type.split('/')[0] == 'image' else 'doc'
         # 上一次修改日期
-        lastModifieDate = 'Mon Aug 08 2016 20:21:13 GMT+0800 (CST)'
+        lastModifieDate = 'Tue Dec 13 2016 17:14:47 GMT+0800 (中国标准时间)'
         # 文件大小
         file_size = os.path.getsize(file_name)
         # clientMediaId
@@ -135,6 +137,7 @@ def webwxuploadmedia(image_name):
             return "None Fuck Cookie"
 
         uploadmediarequest = json.dumps({
+            "UploadType": 2,
             "BaseRequest": params['BaseRequest'],
             "ClientMediaId": client_media_id,
             "TotalLen": file_size,
@@ -142,57 +145,74 @@ def webwxuploadmedia(image_name):
             "DataLen": file_size,
             "MediaType": 4
         }, ensure_ascii=False)
-
-        multipart_encoder = {
-                'id': 'WU_FILE_' + str(media_count),
-                'name': file_name,
-                'type': mime_type,
-                'lastModifieDate': lastModifieDate,
-                'size': str(file_size),
-                'mediatype': media_type,
-                'uploadmediarequest': uploadmediarequest,
-                'webwx_data_ticket': webwx_data_ticket,
-                'pass_ticket': pass_ticket,
-                'filename': (file_name, open(file_name, 'rb'), mime_type.split('/')[1])
-            }
-        boundary='-----------------------------1575017231431605357584454111'
-        data=""
-        for k, v in multipart_encoder.items():
+# "FromUserName":"@bbe75da1320ccae39ec60ec150997a0c14715ff14ecece84a97e163cace535a0","ToUserName":"filehelper","FileMd5":"5eb5f4102da4715f1136906838dde53b"}
+        multipart_encoder = [
+                             {'id': 'WU_FILE_' + str(media_count)},
+                             {'name': file_name},
+                             {'type': mime_type},
+                             {'lastModifiedDate': lastModifieDate},
+                             {'size': str(file_size)},
+                             {'mediatype': media_type},
+                             {'uploadmediarequest': uploadmediarequest},
+                             {'webwx_data_ticket': webwx_data_ticket},
+                             {'pass_ticket': pass_ticket},
+                             {'filename': (file_name, open(file_name, 'rb'), mime_type)}
+                             ]
+#         {
+#                 'id': 'WU_FILE_' + str(media_count),
+#                 'name': file_name,
+#                 'type': mime_type,
+#                 'lastModifieDate': lastModifieDate,
+#                 'size': str(file_size),
+#                 'mediatype': media_type,
+#                 'uploadmediarequest': uploadmediarequest,
+#                 'webwx_data_ticket': webwx_data_ticket,
+#                 'pass_ticket': pass_ticket,
+#                 'filename': (file_name, open(file_name, 'rb'), mime_type.split('/')[1])
+#             }
+        boundary='------WebKitFormBoundarysVhHEUB6HWQIhDbb'
+        data=b'';
+#python3要全转为byte拼接
+        for k in multipart_encoder:
+            v=k.get(list(k.keys())[0])
+            k=list(k.keys())[0]
             print(k)
             print(v)
-            data+=boundary+"\n"
+            data+=(boundary+"\r\n").encode(encoding='utf_8')
             if k=="filename":
-                data+='Content-Disposition: form-data; name="%s"; filename="' % k +v[0]+'"\n' 
-                data+='Content-Type: '+v[2]
+                data+=('Content-Disposition: form-data; name="%s"; filename="' % k +v[0]+'"\r\n').encode(encoding='utf_8')
+                data+=('Content-Type: '+v[2]).encode(encoding='utf_8')
             else:
-                data+='Content-Disposition: form-data; name="%s"\n' % k    
-            data+="\n"
+                data+=('Content-Disposition: form-data; name="%s"\r\n' % k).encode(encoding='utf_8')    
+            data+="\r\n".encode(encoding='utf_8')
             if k=="filename":
-                data+="\n"
-                data+="\n"
+                data+="\r\n".encode(encoding='utf_8')
+#                 data+="\n"
                 c=v[1].read()
-                print(c)
-                print(base64.b64encode(c).decode('UTF8'))
+                data=data+c
+                data+="\r\n".encode(encoding='utf_8')
+#                 print(c)
+#                 print(base64.b64encode(c).decode('UTF8'))
 #                 data+=base64.b64encode(c).decode('UTF8')+"\n"
             else:    
-                data+=v+"\n"
-        data+=boundary+"--"
+                data+=(v+"\r\n").encode(encoding='utf_8')
+        data+=(boundary+"--\r\n").encode(encoding='utf_8')
         print(data)    
         headers = {
-            'Host': 'file2.wx.qq.com',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:42.0) Gecko/20100101 Firefox/42.0',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'Referer': 'https://wx2.qq.com/',
-            'Content-Type':'multipart/form-data; boundary='+boundary,
-            'Origin': 'https://wx2.qq.com',
+            'Host': 'file.wx.qq.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'zh-CN,zh;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Referer': 'https://wx.qq.com/',
+            'Content-Type':'multipart/form-data; boundary=----WebKitFormBoundarysVhHEUB6HWQIhDbb',
+            'Origin': 'https://wx.qq.com',
             'Connection': 'keep-alive',
             'Pragma': 'no-cache',
             'Cache-Control': 'no-cache'
         }
-        req = urllib.request.Request(url,data.encode(encoding='UTF8'),method="POST",headers=headers)
-        response_json = json.loads(opener.open(req).read().decode('UTF-8'))
+        req = urllib.request.Request(url,data,method="POST",headers=headers)
+        response_json = json.loads(urllib.request.urlopen(req).read().decode('UTF-8'))
         print(response_json)
         if response_json['BaseResponse']['Ret'] == 0:
             return response_json
@@ -282,7 +302,7 @@ while True:
 #                 sendMsg("小冰你好",xiaobingId)
         else:        
             for msgAdd in webwxsyncData['AddMsgList']:
-                if msgAdd['ToUserName']==ToUserName :
+                if msgAdd['FromUserName']==ToUserName :
                     message = msgAction(msgAdd)
                     if message!="":
                         sendMsg(message,xiaobingId,msgAdd['MsgType'])        
