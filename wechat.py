@@ -59,7 +59,22 @@ def sendMsg(msg,sendUserId,type):
         data = opener.open(req).read()
         return data
     if type==3:
-        sendmsgimg(msg,sendUserId)     
+        sendmsgimg(msg,sendUserId)
+    if type==47:
+        msgurl='https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&pass_ticket=%s' % pass_ticket
+        timeC=str(int(time.time() * 1000)) + str(random.random())[:5].replace('.', '')
+        msgdata={
+            'BaseRequest' : params['BaseRequest'],
+            "Msg":{"Type":47,
+                   "EmojiFlag":2,
+                   "EMoticonMd5":msg,
+                   "FromUserName":userId,
+                   "ToUserName":sendUserId,
+                   "LocalID":timeC,
+                   "ClientMsgId":timeC
+        },"Scene":0}
+        data = http(msgurl,msgdata,"POST")
+        return data
 def msgAction(msg):
     returnMsg = msg["Content"]
     if msg["MsgType"]==1:
@@ -70,10 +85,13 @@ def msgAction(msg):
             content = msg["Content"]
             returnMsg = content
     if msg["MsgType"]==3:
-        returnMsg = getmsgimg(msg["MsgId"])         
+        returnMsg = getmsgimg(msg["MsgId"])
+    if msg["MsgType"]==47:
+        returnMsg=  msg["Content"].replace('&lt;', '<').replace('&gt;', '>')
+        returnMsg=returnMsg[returnMsg.find("md5=\"")+5:returnMsg.find("\" len")]              
     if msg["MsgType"]==51:
         returnMsg=""          
-    return returnMsg;    
+    return returnMsg;       
 def getmsgimg(msgId):
     dirName='C://Users/Administrator/Desktop/img_' + msgId + '.jpg'
     object = open(dirName,"wb")    
@@ -302,7 +320,7 @@ while True:
 #                 sendMsg("小冰你好",xiaobingId)
         else:        
             for msgAdd in webwxsyncData['AddMsgList']:
-                if msgAdd['FromUserName']==ToUserName :
+                if msgAdd['ToUserName']==ToUserName :
                     message = msgAction(msgAdd)
                     if message!="":
                         sendMsg(message,xiaobingId,msgAdd['MsgType'])        
