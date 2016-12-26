@@ -13,6 +13,7 @@ import os
 import mimetypes
 import requests
 import base64
+from pydub import AudioSegment
 
 cj = co.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
@@ -86,12 +87,42 @@ def msgAction(msg):
             returnMsg = content
     if msg["MsgType"]==3:
         returnMsg = getmsgimg(msg["MsgId"])
+    if msg["MsgType"]==34:
+        returnMsg = getvoice(msg["MsgId"])
     if msg["MsgType"]==47:
         returnMsg=  msg["Content"].replace('&lt;', '<').replace('&gt;', '>')
         returnMsg=returnMsg[returnMsg.find("md5=\"")+5:returnMsg.find("\" len")]              
     if msg["MsgType"]==51:
-        returnMsg=""          
-    return returnMsg;       
+        returnMsg=""     
+    return returnMsg;
+def getvoice(msgId):
+    apiKey="jHLsG7y4pCHoxGVexittHTLw61xpiVMK"
+    SecretKey="zjjZlOGSZ4PzsAIhMAwKQ69hG0i7dxgc"
+    token=json.loads(http("https://openapi.baidu.com/oauth/2.0/token?grant_type=client_credentials&client_id=%s&client_secret=%s" % (apiKey,SecretKey),None,"GET").decode('UTF8'))["access_token"]
+    req = urllib.request.Request("https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid=%s&skey=%s" % (msgId,skey),method="GET")
+    file= opener.open(req)
+    song = AudioSegment.from_mp3(file)  #读取mp3格式文件
+    song.export("C://Users/Administrator/Desktop/4.wav", format="wav",bitrate="8k")
+    file_object1 = open('C://Users/Administrator/Desktop/4.wav',"rb")
+    file=file_object1.read()
+    file_object1.close()
+    data={
+      "format":"wav",
+      "rate": 8000,
+      "channel":"1",
+      "token":token,
+      "cuid":"7757437",
+      "len":len(file),
+      "speech":base64.b64encode(file).decode('UTF8'),
+      } 
+    
+    req = urllib.request.Request("http://vop.baidu.com/server_api",json.dumps(data).encode(encoding='UTF8'),method="POST")
+    req.add_header("Content-Type", "application/json; charset=utf-8")
+    msg=urllib.request.urlopen(req).read().decode('UTF-8')
+    print(msg)
+    jsondata = json.loads(msg)
+    msg=jsondata["result"][0] if jsondata["err_no"]==0 else " "
+    return msg;      
 def getmsgimg(msgId):
     dirName='C://Users/Administrator/Desktop/img_' + msgId + '.jpg'
     object = open(dirName,"wb")    
@@ -322,6 +353,9 @@ while True:
             for msgAdd in webwxsyncData['AddMsgList']:
                 if msgAdd['ToUserName']==ToUserName :
                     message = msgAction(msgAdd)
+                    if msgAdd["MsgType"]==34:
+                        sendMsg(message,ToUserName,1)
+                    message=""#停止回复小冰   
                     if message!="":
                         sendMsg(message,xiaobingId,msgAdd['MsgType'])        
                 if msgAdd['FromUserName']==xiaobingId:
