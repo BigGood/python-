@@ -5,7 +5,7 @@ numList=["0"];
 buy=0;
 sale=0;
 flag=1;
-file = open("C://Users/Administrator/Desktop/shares.xlsx","w")
+file = open("C://Users/Administrator/Desktop/shares2017-1-5.xlsx","w")
 def flagchange():
     while True:
         flag1=input("flag：")
