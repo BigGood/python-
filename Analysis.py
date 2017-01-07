@@ -41,7 +41,6 @@ _100Volume2=0;
 _100AvePrice2=0;
 
 for days in range(0,61):
-    global date
     date=datetime.datetime.strftime(datetime.datetime.now()+datetime.timedelta(days=-days),"%Y%m%d" )
     req = urllib.request.Request(url % (symbol,date),method="GET")
     msg=urllib.request.urlopen(req).read().decode("GBK")
