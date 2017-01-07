@@ -73,7 +73,6 @@ for days in range(0,61):
     #         sheet1.write(index,len(cows),cows[index2])
     #     elif cows[5]=="中性盘":
     #         sheet1.write(index,len(cows),cows[index2])
-    sheet1.write(0,6,"=SUM(D1:D%s)"% (len(lines)-1))       
     if os.path.isdir("C://Users/Administrator/Desktop/"+symbol):      
         w.save('C://Users/Administrator/Desktop/'+symbol+'/'+date+'.xls')
     else:
