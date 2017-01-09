@@ -8,7 +8,7 @@ import datetime
 def readxls(file):
     return xlrd.open_workbook(file)
 
-
+#测试6
 style0 = xlwt.XFStyle()
 style0.pattern.pattern = xlwt.Pattern.SOLID_PATTERN
 style0.pattern.pattern_fore_colour = xlwt.Style.colour_map['red']
