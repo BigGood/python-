@@ -21,14 +21,13 @@ style1.pattern.pattern_fore_colour = xlwt.Style.colour_map['yellow']
 print(datetime.datetime.strftime(datetime.datetime.now()+datetime.timedelta(days=1),"%Y%m%d" ))
 url="http://stock.gtimg.cn/data/index.php?appn=detail&action=download&c=%s&d=%s"
 date="20170103"
-symbol="sh603369"
+symbol="sh600115"
 _60data=[]
 dateList=[]
 info={}
 
 
 for days in range(0,61):
-    
     tolVolume1=0;
     avePrice1=0;
     tolPrice1=0;
@@ -47,6 +46,12 @@ for days in range(0,61):
     _100tolPrice2=0;
     _100AvePrice2=0;
     
+    startPrice=0;
+    endPrice=0;
+    maxPrice=0;
+    minPrice=10000;
+    rose=0;
+    
     date=datetime.datetime.strftime(datetime.datetime.now()+datetime.timedelta(days=-days),"%Y%m%d" )
     req = urllib.request.Request(url % (symbol,date),method="GET")
     msg=urllib.request.urlopen(req).read().decode("GBK")
@@ -60,6 +65,15 @@ for days in range(0,61):
     sheet1 = w.add_sheet('sheet1',cell_overwrite_ok=True)
     for index in range(len(lines)):
         cows=lines[index].split("\t")
+        if index!=0:
+            if float(cows[1])>maxPrice:
+                maxPrice=float(cows[1])
+            if float(cows[1])<minPrice:
+                minPrice=float(cows[1])
+        if index==1:
+           startPrice=float(cows[1])-float(cows[2])
+        if index==len(lines)-1:
+           endPrice=float(cows[1])          
         if cows[5]=="买盘":
            tolVolume1+=int(cows[3])
            tolPrice1+=(float(cows[1])*int(cows[3]))
@@ -89,7 +103,8 @@ for days in range(0,61):
     #         sheet1.write(index,len(cows),cows[index2])
     #     elif cows[5]=="中性盘":
     #         sheet1.write(index,len(cows),cows[index2])
-    
+    if tolVolume1==0:
+        continue;
     sheet1.write(1,8,"总买入量："+str(tolVolume1))
     sheet1.write(2,8,"总买入："+str(tolPrice1))
     sheet1.write(3,8,"平均买入价："+str(tolPrice1/tolVolume1))
@@ -107,29 +122,34 @@ for days in range(0,61):
     sheet1.write(7,9,"大于100手总价："+str(_100tolPrice2))
     sheet1.write(8,9,"大于100手平均价："+str(_100tolPrice2/_100Volume2))
     info={
-          "tolVolume1":  tolVolume1, 
-"avePrice1":  tolPrice1/tolVolume1, 
-"tolPrice1":  tolPrice1, 
-"mixVolume1":  mixVolume1, 
-"aveVolume1":  tolVolume1/(len(lines)-1), 
-"_100Volume1"    :    _100Volume1,
-"_100tolPrice1":  _100tolPrice1,
-"_100AvePrice1":  _100tolPrice1/_100Volume1,
-"tolVolume2":    tolVolume2,
-"avePrice2":    tolPrice2/tolVolume2,
-"tolPrice2":    tolPrice2,
-"mixVolume2":    mixVolume2,
-"aveVolume2":    tolVolume2/(len(lines)-1),
-"_100Volume2"    :    _100Volume2,
-"_100tolPrice2":  _100tolPrice2,
-"_100AvePrice2":  _100tolPrice2/_100Volume2
+            "tolVolume1":  tolVolume1, 
+            "avePrice1":  tolPrice1/tolVolume1, 
+            "tolPrice1":  tolPrice1, 
+            "mixVolume1":  mixVolume1, 
+            "aveVolume1":  tolVolume1/(len(lines)-1), 
+            "_100Volume1"    :    _100Volume1,
+            "_100tolPrice1":  _100tolPrice1,
+            "_100AvePrice1":  _100tolPrice1/_100Volume1,
+            "tolVolume2":    tolVolume2,
+            "avePrice2":    tolPrice2/tolVolume2,
+            "tolPrice2":    tolPrice2,
+            "mixVolume2":    mixVolume2,
+            "aveVolume2":    tolVolume2/(len(lines)-1),
+            "_100Volume2"    :    _100Volume2,
+            "_100tolPrice2":  _100tolPrice2,
+            "_100AvePrice2":  _100tolPrice2/_100Volume2,
+            "startPrice":   startPrice,
+            "endPrice":     endPrice,
+            "maxPrice": maxPrice,
+            "minPrice":minPrice,
+            "rose": (endPrice-startPrice)/startPrice
           }
     _60data.append(info)
     dateList.append(date)        
     if os.path.isdir("C://Users/Administrator/Desktop/data/"+symbol):      
         w.save('C://Users/Administrator/Desktop/data/'+symbol+'/'+date+'.xls')
     else:
-        os.mkdir("C://Users/Administrator/Desktop/"+symbol)
+        os.mkdir("C://Users/Administrator/Desktop/data/"+symbol)
         w.save('C://Users/Administrator/Desktop/data/'+symbol+'/'+date+'.xls')
 
 w2 = xlwt.Workbook()
@@ -144,6 +164,11 @@ sheet1.write(0,7,"平均卖出价")
 sheet1.write(0,8,"平均卖出量")
 sheet1.write(0,9,"大于100手总量")
 sheet1.write(0,10,"大于100手平均价")
+sheet1.write(0,11,"开盘价")
+sheet1.write(0,12,"最高价")
+sheet1.write(0,13,"最低价")
+sheet1.write(0,14,"收盘价")
+sheet1.write(0,15,"涨跌幅")
 for index in range(len(_60data)):
     sheet1.write(index+1,0,dateList[index])
     sheet1.write(index+1,1,  _60data[index]["tolVolume1"])
@@ -156,4 +181,9 @@ for index in range(len(_60data)):
     sheet1.write(index+1,8,_60data[index]["aveVolume2"])
     sheet1.write(index+1,9,_60data[index]["_100Volume2"])
     sheet1.write(index+1,10,_60data[index]["_100AvePrice2"])
-w2.save('C://Users/Administrator/Desktop/data/'+symbol+'/analysis.xls')    
+    sheet1.write(index+1,11,_60data[index]["startPrice"])
+    sheet1.write(index+1,12,_60data[index]["maxPrice"])
+    sheet1.write(index+1,13,_60data[index]["minPrice"])
+    sheet1.write(index+1,14,_60data[index]["endPrice"])
+    sheet1.write(index+1,15,"%.2f%%" % (_60data[index]["rose"] * 100))
+w2.save('C://Users/Administrator/Desktop/data/'+symbol+'/analysis'+symbol+'.xls')    
