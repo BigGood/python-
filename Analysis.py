@@ -2,26 +2,27 @@
 import urllib.request
 import xlrd
 import xlwt
+import xlsxwriter
 import os
 import time
 import datetime
 def readxls(file):
     return xlrd.open_workbook(file)
 
-#测试6
-style0 = xlwt.XFStyle()
-style0.pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-style0.pattern.pattern_fore_colour = xlwt.Style.colour_map['red']
-
-style1 = xlwt.XFStyle()
-style1.pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-style1.pattern.pattern_fore_colour = xlwt.Style.colour_map['yellow']
+# #测试6
+# style0 = xlsxwriter.XFStyle()
+# style0.pattern.pattern = xlsxwriter.Pattern.SOLID_PATTERN
+# style0.pattern.pattern_fore_colour = xlsxwriter.Style.colour_map['red']
+# 
+# style1 = xlsxwriter.XFStyle()
+# style1.pattern.pattern = xlsxwriter.Pattern.SOLID_PATTERN
+# style1.pattern.pattern_fore_colour = xlwt.Style.colour_map['yellow']
 
 
 print(datetime.datetime.strftime(datetime.datetime.now()+datetime.timedelta(days=1),"%Y%m%d" ))
 url="http://stock.gtimg.cn/data/index.php?appn=detail&action=download&c=%s&d=%s"
 date="20170103"
-symbol="sh600115"
+symbol="sh603369"
 _60data=[]
 dateList=[]
 info={}
@@ -61,8 +62,16 @@ for days in range(0,61):
     # myWorkbook = xlrd.read_csv("C://Users/Administrator/Desktop/2017-01-03.xls")
     # wb = load_workbook(filename="C://Users/Administrator/Desktop/2017-01-03.xls")
     lines=msg.split("\n")
-    w = xlwt.Workbook()
-    sheet1 = w.add_sheet('sheet1',cell_overwrite_ok=True)
+    if os.path.isdir("C://Users/Administrator/Desktop/data/"+symbol):      
+        w=xlsxwriter.Workbook('C://Users/Administrator/Desktop/data/'+symbol+'/'+date+'.xlsx')
+    else:
+        os.mkdir("C://Users/Administrator/Desktop/data/"+symbol)
+        w=xlsxwriter.Workbook('C://Users/Administrator/Desktop/data/'+symbol+'/'+date+'.xlsx')
+    style0 = w.add_format() 
+    style0.set_bg_color("red")
+    style1 = w.add_format() 
+    style1.set_bg_color("yellow")
+    sheet1 = w.add_worksheet()
     for index in range(len(lines)):
         cows=lines[index].split("\t")
         if index!=0:
@@ -146,14 +155,17 @@ for days in range(0,61):
           }
     _60data.append(info)
     dateList.append(date)        
-    if os.path.isdir("C://Users/Administrator/Desktop/data/"+symbol):      
-        w.save('C://Users/Administrator/Desktop/data/'+symbol+'/'+date+'.xls')
-    else:
-        os.mkdir("C://Users/Administrator/Desktop/data/"+symbol)
-        w.save('C://Users/Administrator/Desktop/data/'+symbol+'/'+date+'.xls')
+    w.close()
 
-w2 = xlwt.Workbook()
-sheet1 = w2.add_sheet('sheet1',cell_overwrite_ok=True)
+w2 = xlsxwriter.Workbook('C://Users/Administrator/Desktop/data/'+symbol+'/analysis'+symbol+'.xlsx')
+sheet1 = w2.add_worksheet()
+
+style0 = w2.add_format() 
+style0.set_bg_color("red")
+style1 = w2.add_format() 
+style1.set_bg_color("green")
+
+
 sheet1.write(0,1,"总买入量")
 sheet1.write(0,2,"平均买入价")
 sheet1.write(0,3,"平均买入量")
@@ -185,5 +197,16 @@ for index in range(len(_60data)):
     sheet1.write(index+1,12,_60data[index]["maxPrice"])
     sheet1.write(index+1,13,_60data[index]["minPrice"])
     sheet1.write(index+1,14,_60data[index]["endPrice"])
-    sheet1.write(index+1,15,"%.2f%%" % (_60data[index]["rose"] * 100))
-w2.save('C://Users/Administrator/Desktop/data/'+symbol+'/analysis'+symbol+'.xls')    
+    sheet1.write(index+1,15,"%.2f%%" % (_60data[index]["rose"] * 100),style0 if _60data[index]["rose"]>0 else style1)    
+chart1 = w2.add_chart({'type': 'column'})
+chart1.add_series({
+    'values':     '=Sheet1!$B$2:$B$%s' % (len(_60data)+1),
+})
+ 
+# Configure second series.
+chart1.add_series({
+    'values':     '=Sheet1!$G$2:$C$%s' % (len(_60data)+1),
+})
+chart1.set_x_axis({"data":"=Sheet1!$A$2:$A$%s"% (len(_60data)+1)})
+sheet1.insert_chart('Q1', chart1)
+w2.close()    
