@@ -28,7 +28,7 @@ dateList=[]
 info={}
 
 
-for days in range(0,61):
+for days in range(0,120):
     tolVolume1=0;
     avePrice1=0;
     tolPrice1=0;
@@ -79,10 +79,10 @@ for days in range(0,61):
                 maxPrice=float(cows[1])
             if float(cows[1])<minPrice:
                 minPrice=float(cows[1])
-        if index==1:
-           startPrice=float(cows[1])-float(cows[2])
-        if index==len(lines)-1:
-           endPrice=float(cows[1])          
+            if index==1:
+                startPrice=float(cows[1])-float(cows[2])
+            if index==len(lines)-1:
+                endPrice=float(cows[1]) 
         if cows[5]=="买盘":
            tolVolume1+=int(cows[3])
            tolPrice1+=(float(cows[1])*int(cows[3]))
@@ -182,31 +182,79 @@ sheet1.write(0,13,"最低价")
 sheet1.write(0,14,"收盘价")
 sheet1.write(0,15,"涨跌幅")
 for index in range(len(_60data)):
-    sheet1.write(index+1,0,dateList[index])
-    sheet1.write(index+1,1,  _60data[index]["tolVolume1"])
-    sheet1.write(index+1,2,_60data[index]["avePrice1"])
-    sheet1.write(index+1,3,_60data[index]["aveVolume1"])
-    sheet1.write(index+1,4,_60data[index]["_100Volume1"])
-    sheet1.write(index+1,5,_60data[index]["_100AvePrice1"])
-    sheet1.write(index+1,6,_60data[index]["tolVolume2"])
-    sheet1.write(index+1,7,_60data[index]["avePrice2"])
-    sheet1.write(index+1,8,_60data[index]["aveVolume2"])
-    sheet1.write(index+1,9,_60data[index]["_100Volume2"])
-    sheet1.write(index+1,10,_60data[index]["_100AvePrice2"])
-    sheet1.write(index+1,11,_60data[index]["startPrice"])
-    sheet1.write(index+1,12,_60data[index]["maxPrice"])
-    sheet1.write(index+1,13,_60data[index]["minPrice"])
-    sheet1.write(index+1,14,_60data[index]["endPrice"])
-    sheet1.write(index+1,15,"%.2f%%" % (_60data[index]["rose"] * 100),style0 if _60data[index]["rose"]>0 else style1)    
+    index1=len(_60data)-index-1
+    sheet1.write(index+1,0,dateList[index1])
+    sheet1.write(index+1,1,  _60data[index1]["tolVolume1"])
+    sheet1.write(index+1,2,_60data[index1]["avePrice1"])
+    sheet1.write(index+1,3,_60data[index1]["aveVolume1"])
+    sheet1.write(index+1,4,_60data[index1]["_100Volume1"])
+    sheet1.write(index+1,5,_60data[index1]["_100AvePrice1"])
+    sheet1.write(index+1,6,_60data[index1]["tolVolume2"])
+    sheet1.write(index+1,7,_60data[index1]["avePrice2"])
+    sheet1.write(index+1,8,_60data[index1]["aveVolume2"])
+    sheet1.write(index+1,9,_60data[index1]["_100Volume2"])
+    sheet1.write(index+1,10,_60data[index1]["_100AvePrice2"])
+    sheet1.write(index+1,11,_60data[index1]["startPrice"])
+    sheet1.write(index+1,12,_60data[index1]["maxPrice"])
+    sheet1.write(index+1,13,_60data[index1]["minPrice"])
+    sheet1.write(index+1,14,_60data[index1]["endPrice"])
+    sheet1.write(index+1,15,"%.2f%%" % (_60data[index1]["rose"] * 100),style0 if _60data[index1]["rose"]>0 else style1)    
+
 chart1 = w2.add_chart({'type': 'column'})
 chart1.add_series({
+    'categories': '=Sheet1!$A$2:$A$%s' % (len(_60data)+1),
     'values':     '=Sheet1!$B$2:$B$%s' % (len(_60data)+1),
+    "name": '=Sheet1!$B$1'
 })
- 
-# Configure second series.
+  
+# # Configure second series.
 chart1.add_series({
-    'values':     '=Sheet1!$G$2:$C$%s' % (len(_60data)+1),
+    'values':     '=Sheet1!$G$2:$G$%s' % (len(_60data)+1),
+    "name": '=Sheet1!$G$1'
 })
-chart1.set_x_axis({"data":"=Sheet1!$A$2:$A$%s"% (len(_60data)+1)})
-sheet1.insert_chart('Q1', chart1)
+chart1.set_size({'width':770})
+sheet1.insert_chart('A%s' % (len(_60data)+2), chart1)
+chart2 = w2.add_chart({'type': 'column'})
+chart2.add_series({
+    'categories': '=Sheet1!$A$2:$A$%s' % (len(_60data)+1),
+    'values':     '=Sheet1!$E$2:$E$%s' % (len(_60data)+1),
+    "name": '=Sheet1!$E$1'
+})
+  
+# # Configure second series.
+chart2.add_series({
+    'values':     '=Sheet1!$J$2:$J$%s' % (len(_60data)+1),
+    "name": '=Sheet1!$J$1'
+})
+chart2.set_size({'width':770})
+sheet1.insert_chart('A%s' % (len(_60data)+17), chart2)
+chart3 = w2.add_chart({'type': 'line'})
+chart3.add_series({
+    'categories': '=Sheet1!$A$2:$A$%s' % (len(_60data)+1),
+    'values':     '=Sheet1!$C$2:$C$%s' % (len(_60data)+1),
+    "name": '=Sheet1!$C$1'
+})
+  
+# # Configure second series.
+chart3.add_series({
+    'values':     '=Sheet1!$H$2:$H$%s' % (len(_60data)+1),
+    "name": '=Sheet1!$H$1'
+})
+chart3.set_size({'width':480})
+sheet1.insert_chart('A%s' % (len(_60data)+32), chart3)
+chart4 = w2.add_chart({'type': 'line'})
+chart4.add_series({
+    'categories': '=Sheet1!$A$2:$A$%s' % (len(_60data)+1),
+    'values':     '=Sheet1!$F$2:$F$%s' % (len(_60data)+1),
+    "name": '=Sheet1!$F$1'
+})
+  
+# # Configure second series.
+chart4.add_series({
+    'values':     '=Sheet1!$K$2:$K$%s' % (len(_60data)+1),
+    "name": '=Sheet1!$K$1'
+})
+chart4.set_size({'width':480})
+sheet1.insert_chart('I%s' % (len(_60data)+32), chart4)
+
 w2.close()    
