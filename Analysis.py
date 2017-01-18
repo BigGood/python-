@@ -19,10 +19,10 @@ def readxls(file):
 # style1.pattern.pattern_fore_colour = xlwt.Style.colour_map['yellow']
 
 
-print(datetime.datetime.strftime(datetime.datetime.now()+datetime.timedelta(days=1),"%Y%m%d" ))
+print(datetime.datetime.strftime(datetime.datetime.now()+datetime.timedelta(days=-1),"%Y%m%d" ))
 url="http://stock.gtimg.cn/data/index.php?appn=detail&action=download&c=%s&d=%s"
 date="20170103"
-symbol="sh600519"
+symbol="sh603369"
 _60data=[]
 dateList=[]
 priceList=[]
@@ -60,7 +60,7 @@ for days in range(0,365):
     MA60=0;
     MA120=0;
     days=365-days
-    date=datetime.datetime.strftime(datetime.datetime.now()+datetime.timedelta(days=-days),"%Y%m%d" )
+    date=datetime.datetime.strftime(datetime.datetime.now()+datetime.timedelta(days=-days+1),"%Y%m%d" )
     req = urllib.request.Request(url % (symbol,date),method="GET")
     msg=urllib.request.urlopen(req).read().decode("GBK")
     if msg=="暂无数据":
