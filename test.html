@@ -1,0 +1,404 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <!-- ���� ECharts �ļ� -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/3.4.0/echarts.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.0/jquery.js"></script>
+</head>
+<body>
+<div >
+    <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+    <div id="main" style="width: 600px;height:400px;"></div>
+	<div id="dayK" style="width: 600px;height:400px;"></div>
+</div>
+	
+    <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var kChart = echarts.init(document.getElementById('dayK'));
+		
+		
+		function splitData(rawData) {
+			var categoryData = [];
+			var values = []
+			for (var i = 0; i < rawData.length; i++) {
+				categoryData.push(rawData[i].splice(0, 1)[0]);
+				rawData[i].splice(4,1);
+				for(var j = 0; j < rawData[i].length; j++){
+					rawData[i][j]=Number(rawData[i][j])
+				}
+				values.push(rawData[i])
+
+				
+			}
+			return {
+				categoryData: categoryData,
+				values: values
+			};
+		}
+		
+		function getDaydate(){
+		var data={}
+			$.ajax({
+		   type: "get",
+		   url: "http://localhost:5000/test1",
+		   dataType: 'json',
+		   async:false,
+		   success: function (data1) {
+				data=data1
+		   }	
+		   });
+		   return  data;
+		}
+		
+		function calculateMA(dayCount,data) {
+					var result = [];
+					for (var i = 0, len = data.values.length; i < len; i++) {
+						if (i < dayCount) {
+							result.push('-');
+							continue;
+						}
+						var sum = 0;
+						for (var j = 0; j < dayCount; j++) {
+							sum += data.values[i - j][1];
+						}
+						result.push(sum / dayCount);
+					}
+					return result;
+				}
+		
+		
+		
+		var i=30;
+		data=getDaydate()
+		data=splitData(data)
+		initKchart({
+				categoryData: data.categoryData.slice(0,i),
+				values: data.values.slice(0,i)
+			})
+			
+		setInterval(function () {
+				if(i>50||i<=30){
+				i++;
+				return;
+				}
+				kChart.setOption({
+					dataZoom: [
+							{
+								start: 100-((30/i)*100),
+								end: 100
+							},
+							{
+								start: 100-((30/i)*100),
+								end: 100
+							}
+						],
+					xAxis:
+					[{
+						data: data.categoryData.slice(0,i)
+					}],
+					series: [{
+						data: data.values.slice(0,i)
+					},{
+								name: 'MA5',
+								type: 'line',
+								data: calculateMA(5,{
+				categoryData: data.categoryData.slice(0,i),
+				values: data.values.slice(0,i)
+			}),
+								smooth: true,
+								lineStyle: {
+									normal: {opacity: 0.5}
+								}
+							},
+							{
+								name: 'MA10',
+								type: 'line',
+								data: calculateMA(10,{
+				categoryData: data.categoryData.slice(0,i),
+				values: data.values.slice(0,i)
+			}),
+								smooth: true,
+								lineStyle: {
+									normal: {opacity: 0.5}
+								}
+							},
+							{
+								name: 'MA20',
+								type: 'line',
+								data: calculateMA(20,{
+				categoryData: data.categoryData.slice(0,i),
+				values: data.values.slice(0,i)
+			}),
+								smooth: true,
+								lineStyle: {
+									normal: {opacity: 0.5}
+								}
+							},
+							{
+								name: 'MA30',
+								type: 'line',
+								data: calculateMA(30,{
+				categoryData: data.categoryData.slice(0,i),
+				values: data.values.slice(0,i)
+			}),
+								smooth: true,
+								lineStyle: {
+									normal: {opacity: 0.5}
+								}
+							}
+					]
+				});
+				i++;
+			}, 1000);
+		
+		
+		function initKchart(data){
+			kChart.setOption({
+									title: {
+							text: '上证指数',
+							left: 0
+						},
+						tooltip: {
+							trigger: 'axis',
+							axisPointer: {
+								type: 'cross'
+							}
+						},
+						legend: {
+							data: ['日K', 'MA5', 'MA10', 'MA20', 'MA30']
+						},
+						grid: {
+							left: '10%',
+							right: '10%',
+							bottom: '15%'
+						},
+						xAxis: {
+							type: 'category',
+							data: data.categoryData,
+							scale: true,
+							boundaryGap : false,
+							axisLine: {onZero: false},
+							splitLine: {show: false},
+							splitNumber: 20,
+							min: 'dataMin',
+							max: 'dataMax'
+						},
+						yAxis: {
+							scale: true,
+							splitArea: {
+								show: true
+							}
+						},
+						dataZoom: [
+							{
+								type: 'inside',
+								start: 0,
+								end: 100
+							},
+							{
+								show: true,
+								type: 'slider',
+								y: '90%',
+								start: 0,
+								end: 100
+							}
+						],
+				series:  [
+							{
+								name: '日K',
+								type: 'candlestick',
+								data: data.values,
+								markPoint: {
+									label: {
+										normal: {
+											formatter: function (param) {
+												return param != null ? Math.round(param.value) : '';
+											}
+										}
+									},
+									data: [
+										{
+											name: 'XX标点',
+											coord: ['2013/5/31', 2300],
+											value: 2300,
+											itemStyle: {
+												normal: {color: 'rgb(41,60,85)'}
+											}
+										},
+										{
+											name: 'highest value',
+											type: 'max',
+											valueDim: 'highest'
+										},
+										{
+											name: 'lowest value',
+											type: 'min',
+											valueDim: 'lowest'
+										},
+										{
+											name: 'average value on close',
+											type: 'average',
+											valueDim: 'close'
+										}
+									],
+									tooltip: {
+										formatter: function (param) {
+											return param.name + '<br>' + (param.data.coord || '');
+										}
+									}
+								},
+								markLine: {
+									symbol: ['none', 'none'],
+									data: [
+										[
+											{
+												name: 'from lowest to highest',
+												type: 'min',
+												valueDim: 'lowest',
+												symbol: 'circle',
+												symbolSize: 10,
+												label: {
+													normal: {show: false},
+													emphasis: {show: false}
+												}
+											},
+											{
+												type: 'max',
+												valueDim: 'highest',
+												symbol: 'circle',
+												symbolSize: 10,
+												label: {
+													normal: {show: false},
+													emphasis: {show: false}
+												}
+											}
+										],
+										{
+											name: 'min line on close',
+											type: 'min',
+											valueDim: 'close'
+										},
+										{
+											name: 'max line on close',
+											type: 'max',
+											valueDim: 'close'
+										}
+									]
+								}
+							},
+							{
+								name: 'MA5',
+								type: 'line',
+								data: calculateMA(5,data),
+								smooth: true,
+								lineStyle: {
+									normal: {opacity: 0.5}
+								}
+							},
+							{
+								name: 'MA10',
+								type: 'line',
+								data: calculateMA(10,data),
+								smooth: true,
+								lineStyle: {
+									normal: {opacity: 0.5}
+								}
+							},
+							{
+								name: 'MA20',
+								type: 'line',
+								data: calculateMA(20,data),
+								smooth: true,
+								lineStyle: {
+									normal: {opacity: 0.5}
+								}
+							},
+							{
+								name: 'MA30',
+								type: 'line',
+								data: calculateMA(30,data),
+								smooth: true,
+								lineStyle: {
+									normal: {opacity: 0.5}
+								}
+							},
+
+						]
+			});
+		}
+		
+       
+
+        // 使用刚指定的配置项和数据显示图表。
+        //myChart.setOption(option);
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main'));
+
+        // 指定图表的配置项和数据
+		$.ajax({
+		   type: "get",
+		   url: "http://localhost:5000/test",
+		   dataType: 'json',
+		   success: function (data) {
+			myChart.setOption({
+				title: {
+					text: '异步数据加载示例'
+				},
+				tooltip: {},
+				legend: {
+					data:['销量']
+				},
+				xAxis: {
+					type : 'category',
+					boundaryGap : false,
+					axisLine: {onZero: false},
+					data: data["date"]
+				},
+				yAxis: [{
+						scale: true,
+						splitArea: {
+							show: true
+						}
+					},
+					{
+						scale: true,
+						splitNumber: 2,
+						
+					}],
+				dataZoom: [{
+						type: 'inside',
+						start: 0,
+						end: 100
+					},{
+        start: 0,
+        end: 100,
+    }],
+				series: [{
+					name: "价格",
+					type: 'line',
+					data: data["price"]
+				}]
+			});
+		},
+		error:function(data){
+			console.log(data)
+		}
+		});
+		
+		 
+        // 使用刚指定的配置项和数据显示图表。
+        //myChart.setOption(option);
+    </script>
+</body>
+</html>
