@@ -36,6 +36,18 @@ def test():
         day_price.append(cows[1])
     data={"date":day_time,"price":day_price}
     return response(json.dumps(data))
+
+@app.route('/test1',methods=['POST', 'GET'])
+def test1():
+    code="sh600089"
+    sDate=''
+    eDate=''
+    days='50'
+    req = urllib.request.Request("http://web.ifzq.gtimg.cn/appstock/app/fqkline/get?_var=kline_dayqfq&param=%s,day,%s,%s,%s,qfq" % (code,sDate,eDate,days),method="GET")
+    data=urllib.request.urlopen(req).read().decode('GBK')
+    data=json.loads(data[data.find("=")+1:])
+    return response(json.dumps(data['data'][code]['qfqday']))
+
 def getdataByDay(code,date):
     req = urllib.request.Request(url % (code,date),method="GET")
     msg=urllib.request.urlopen(req).read().decode("GBK")
