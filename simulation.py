@@ -42,7 +42,7 @@ def test1():
     code="sh600089"
     sDate=''
     eDate=''
-    days='50'
+    days='500'
     req = urllib.request.Request("http://web.ifzq.gtimg.cn/appstock/app/fqkline/get?_var=kline_dayqfq&param=%s,day,%s,%s,%s,qfq" % (code,sDate,eDate,days),method="GET")
     data=urllib.request.urlopen(req).read().decode('GBK')
     data=json.loads(data[data.find("=")+1:])

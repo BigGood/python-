@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <!-- ���� ECharts �ļ� -->
+    <!-- ���� ECharts �ļ� -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/3.4.0/echarts.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.0/jquery.js"></script>
 </head>
@@ -12,12 +12,14 @@
     <div id="main" style="width: 600px;height:400px;"></div>
 	<div id="dayK" style="width: 600px;height:400px;"></div>
 </div>
-	
+<input type="button" value="暂停" onclick="javascript:dayKFlag=false;"/>
+<input type="button" value="开始" onclick="javascript:dayKFlag=true;"/>
+
     <script type="text/javascript">
         // 基于准备好的dom，初始化echarts实例
         var kChart = echarts.init(document.getElementById('dayK'));
-		
-		
+
+
 		function splitData(rawData) {
 			var categoryData = [];
 			var values = []
@@ -29,14 +31,14 @@
 				}
 				values.push(rawData[i])
 
-				
+
 			}
 			return {
 				categoryData: categoryData,
 				values: values
 			};
 		}
-		
+
 		function getDaydate(){
 		var data={}
 			$.ajax({
@@ -46,11 +48,11 @@
 		   async:false,
 		   success: function (data1) {
 				data=data1
-		   }	
+		   }
 		   });
 		   return  data;
 		}
-		
+
 		function calculateMA(dayCount,data) {
 					var result = [];
 					for (var i = 0, len = data.values.length; i < len; i++) {
@@ -66,9 +68,9 @@
 					}
 					return result;
 				}
-		
-		
-		
+
+
+
 		var i=30;
 		data=getDaydate()
 		data=splitData(data)
@@ -76,9 +78,12 @@
 				categoryData: data.categoryData.slice(0,i),
 				values: data.values.slice(0,i)
 			})
-			
+		var dayKFlag=true;
 		setInterval(function () {
-				if(i>50||i<=30){
+                if(dayKFlag!=true){
+                    return;
+                }
+				if(i>data.values.length||i<=30){
 				i++;
 				return;
 				}
@@ -151,8 +156,8 @@
 				});
 				i++;
 			}, 1000);
-		
-		
+
+
 		function initKchart(data){
 			kChart.setOption({
 									title: {
@@ -327,21 +332,21 @@
 						]
 			});
 		}
-		
-       
+
+
 
         // 使用刚指定的配置项和数据显示图表。
         //myChart.setOption(option);
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
+
+
         // 基于准备好的dom，初始化echarts实例
         var myChart = echarts.init(document.getElementById('main'));
 
@@ -374,7 +379,7 @@
 					{
 						scale: true,
 						splitNumber: 2,
-						
+
 					}],
 				dataZoom: [{
 						type: 'inside',
@@ -395,8 +400,8 @@
 			console.log(data)
 		}
 		});
-		
-		 
+
+
         // 使用刚指定的配置项和数据显示图表。
         //myChart.setOption(option);
     </script>
